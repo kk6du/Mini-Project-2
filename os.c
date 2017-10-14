@@ -90,7 +90,7 @@ void OS_Init(void){int i;
   OS_DisableInterrupts();
   PLL_Init(Bus80MHz);                 // set processor clock to 80 MHz
 	InitTimer2A(TIME_1MS);  // initialize Timer2A which is used for software timer and decrease the sleepCt
-	InitTimer3A(80);
+	InitTimer3A();
   OS_ClearMsTime();
   
   NVIC_ST_CTRL_R = 0;         // disable SysTick during setup
@@ -412,7 +412,7 @@ void Timer2A_Handler(void){
 	// Your code here.
 }
 
-void InitTimer3A(unsigned long period) {
+void InitTimer3A(void) {
 	long sr;
 	volatile unsigned long delay;
 	
