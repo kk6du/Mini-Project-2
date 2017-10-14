@@ -239,18 +239,13 @@ void FindAreaNum(void){
 // The UART ISR should call OS_Signal(&RxDataAvailable) when it receives data from Rx
 // Similarly, the transmit channel waits on a semaphore in the foreground
 // and the UART ISR signals this semaphore (TxRoomLeft) when getting data from fifo
-// Modify your intepreter from Lab 1, adding commands to help debug 
 // Interpreter is a foreground thread, accepts input from serial port, outputs to serial port
 // inputs:  none
 // outputs: none
-void Interpreter(void);    // just a prototype, link to your interpreter
-// add the following commands, leave other commands, if they make sense
-// 1) print performance measures 
+// there are following commands
+//    print performance measures 
 //    time-jitter, number of data points lost, number of calculations performed
-//    i.e., NumSamples, NumCreated, MaxJitter, DataLost, FilterWork, PIDwork
-      
-// 2) print debugging parameters 
-//    i.e., x[], y[] 
+//    i.e., NumSamples, NumCreated, MaxJitter, DataLost, UpdateWork, Calculations
 void Interpreter(void){
 	char command[80];
   while(1){
