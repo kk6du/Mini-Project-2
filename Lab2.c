@@ -219,7 +219,7 @@ void Consumer(void){
 // inputs:  none
 // outputs: none
 
-void FindAreaNum(void){ 
+void CubeNumCalc(void){ 
 	uint16_t CurrentX,CurrentY;
   while(NumSamples < RUNLENGTH) {
 		CurrentX = x; CurrentY = y;
@@ -313,7 +313,7 @@ int main(void){
 // create initial foreground threads
   NumCreated += OS_AddThread(&Interpreter,128,2); 
   NumCreated += OS_AddThread(&Consumer,128,1); 
-	NumCreated += OS_AddThread(&FindAreaNum,128,1); 
+	NumCreated += OS_AddThread(&CubeNumCalc,128,1); 
  
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
 	return 0;            // this never executes
