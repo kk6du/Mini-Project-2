@@ -215,7 +215,7 @@ void Consumer(void){
 // foreground thread that runs without waiting or sleeping
 // it executes some calculation related to the position of crosshair 
 //******** CubeNumCalc *************** 
-// foreground thread, Calculate the cube number
+// foreground thread, calculates the virtual cube number for the crosshair
 // never blocks, never sleeps, never dies
 // inputs:  none
 // outputs: none
