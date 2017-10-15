@@ -28,7 +28,7 @@
 #define TOPNUMCOLOR LCD_ORANGE
 #define CROSSSIZE            5
 #define PERIOD               4000000   // DAS 20Hz sampling period in system time units
-#define WAITLENGTH           1000
+#define LIFETIME             1000
 #define RUNLENGTH            600 // 30 seconds run length
 
 
