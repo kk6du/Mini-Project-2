@@ -162,6 +162,7 @@ void ButtonWork(void){
 		BSP_LCD_Message(1,0,0,"Horizontal Area:",area[0]);
 		BSP_LCD_Message(1,1,0,"Vertical Area:",area[1]);
 		BSP_LCD_Message(1,2,0,"Elapsed Time:",ElapsedTime);
+		OS_Sleep(50);
 	}
 	BSP_LCD_FillScreen(BGCOLOR);
 	OS_bSignal(&LCDFree);
