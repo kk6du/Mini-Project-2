@@ -146,7 +146,7 @@ void Producer(void){
 //------------------Task 2--------------------------------
 // background thread executes with SW1 button
 // one foreground task created with button push
-// foreground treads run for 2 sec and die
+// foreground treads run for 1 sec and die
 // ***********ButtonWork*************
 void ButtonWork(void){
 	uint32_t StartTime,CurrentTime,ElapsedTime;
@@ -214,7 +214,7 @@ void Consumer(void){
 //------------------Task 4--------------------------------
 // foreground thread that runs without waiting or sleeping
 // it executes some calculation related to the position of crosshair 
-//******** FindCubeNum *************** 
+//******** CubeNumCalc *************** 
 // foreground thread, Calculate the cube number
 // never blocks, never sleeps, never dies
 // inputs:  none
@@ -235,11 +235,6 @@ void CubeNumCalc(void){
 //------------------Task 5--------------------------------
 // UART background ISR performs serial input/output
 // Two software fifos are used to pass I/O data to foreground
-// The interpreter runs as a foreground thread
-// The UART driver should call OS_Wait(&RxDataAvailable) when foreground tries to receive
-// The UART ISR should call OS_Signal(&RxDataAvailable) when it receives data from Rx
-// Similarly, the transmit channel waits on a semaphore in the foreground
-// and the UART ISR signals this semaphore (TxRoomLeft) when getting data from fifo
 // Interpreter is a foreground thread, accepts input from serial port, outputs to serial port
 // inputs:  none
 // outputs: none
