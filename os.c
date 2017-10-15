@@ -381,13 +381,11 @@ void Timer1A_Handler(void){
 
 void InitTimer2A(unsigned long period) {
 	long sr;
-	volatile unsigned long delay;
 	
 	sr = StartCritical();
   SYSCTL_RCGCTIMER_R |= 0x04;
 	
-  delay = SYSCTL_RCGCTIMER_R;
-	delay = SYSCTL_RCGCTIMER_R;
+    while((SYSCTL_RCGCTIMER_R & 0x04) == 0){} // allow time for clock to stabilize
 	
   TIMER2_CTL_R &= ~TIMER_CTL_TAEN; // 1) disable timer1A during setup
                                    // 2) configure for 32-bit timer mode
@@ -414,13 +412,11 @@ void Timer2A_Handler(void){
 
 void InitTimer3A(void) {
 	long sr;
-	volatile unsigned long delay;
 	
 	sr = StartCritical();
   SYSCTL_RCGCTIMER_R |= 0x08;
 	
-  delay = SYSCTL_RCGCTIMER_R;
-	delay = SYSCTL_RCGCTIMER_R;
+  while((SYSCTL_RCGCTIMER_R & 0x08) == 0){} // allow time for clock to stabilize
 	
   TIMER3_CTL_R &= ~TIMER_CTL_TAEN; // 1) disable timer1A during setup
                                    // 2) configure for 32-bit timer mode
