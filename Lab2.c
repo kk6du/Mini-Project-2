@@ -154,11 +154,11 @@ void ButtonWork(void){
 	ElapsedTime = 0;
 	OS_bWait(&LCDFree);
 	BSP_LCD_FillScreen(BGCOLOR);
-	while (ElapsedTime < WAITLENGTH){
+	while (ElapsedTime < LIFETIME){
 
 		CurrentTime = OS_MsTime();
 		ElapsedTime = CurrentTime - StartTime;
-		BSP_LCD_Message(0,5,0,"Wait Length:",WAITLENGTH);
+		BSP_LCD_Message(0,5,0,"Life Time:",LIFETIME);
 		BSP_LCD_Message(1,0,0,"Horizontal Area:",area[0]);
 		BSP_LCD_Message(1,1,0,"Vertical Area:",area[1]);
 		BSP_LCD_Message(1,2,0,"Elapsed Time:",ElapsedTime);
