@@ -161,41 +161,40 @@ int OS_AddThreads(void(*task0)(void),
 // In Lab 3, you can ignore the stackSize fields
 static uint32_t ThreadNum = 0;
 int OS_AddThread(void(*task)(void),
-   unsigned long stackSize, unsigned long priority) {
+   unsigned long stackSize, unsigned long priority)
+{
   // Your code here.
-	int i;
-	for(i = 0; i < NUMTHREADS; i++)
-	{
-		if(tcbs[i].available)
-		{
-			SetInitialStack(i);
-			Stacks[i][STACKSIZE-2] = (int32_t) task; //set the PC = task
-			tcbs[i].available = 0; //this is no longer available
-			tcbs[i].id = i; //the thread ID is the current number
-			RunPt = &tcbs[i]; //RunPt is the newly inserted thread
-
-			if (i == (NUMTHREADS-1)) //if we are at the end
-			{
-				tcbs[i].next = head; //next must point to the head
-			} else
-			{
-				if (tcbs[i].next->available) //if it is available
-				{
-					tcbs[i].next = head;
-				} else
-				{
-					/*if the next is taken, the next of current = next of previous */
-					tcbs[i].next = tcbs[i-1].next;
-				}
-			}
-			if(&tcbs[i] != head) //if current is not the head
-			{
-				tcbs[i-1].next = &tcbs[i]; //set the previous->next = current
-			}
-			return 1;
-		}
+	unsigned	char	i,j;
+	int32_t	status,thread;
+	 	 status	=	StartCritical();
+	if	(ThreadNum	==	0)
+	{	 	 //	start	add	thread
+		tcbs[0].available	=	0;
+		tcbs[0].next	=	&tcbs[0];	 	 //	first,	create	a	single	cycle
+		RunPt	=	&tcbs[0];	//start	from	tcbs[0]
+		thread	=	0;
 	}
-  return 1;
+	else
+	{	 	 	 //	not	the	start
+		for	(i=0;i<NUMTHREADS;i++){
+		if	(tcbs[i].available)	break;	 	 	 //	find	an	available	tcb	for	the	new	thread
+		}
+		thread	=	i;
+		tcbs[i].available	=	0;	//	make	this	tcb	no	longer	available
+		for	(j	=	(thread	+	NUMTHREADS	- 1)%NUMTHREADS;	j	!=	thread;	j	=	(j	+	NUMTHREADS	- 1)%NUMTHREADS)
+		{
+			if	(tcbs[j].available	==	0)	break;	//	find	a	previous	tcb	which	has	been	used
+		}
+		//	add	this	tcb	into	the	link	list	cycle
+		tcbs[thread].next	=	tcbs[j].next;
+		tcbs[j].next	=	&tcbs[thread];
+	}
+	tcbs[thread].id	=	thread;
+	SetInitialStack(thread);
+	Stacks[thread][STACKSIZE-2]	=	(int32_t)(task);	//	PC
+	ThreadNum++;
+	EndCritical(status);
+	return	1;
 }
 
 //******** OS_Id ***************
@@ -204,7 +203,7 @@ int OS_AddThread(void(*task)(void),
 // Outputs: Thread ID, number greater than zero
 unsigned long OS_Id(void) {
 	// Your code here.
-	return 1;
+	return RunPt->id;
 }
 
 
@@ -216,30 +215,26 @@ unsigned long OS_Id(void) {
 // OS_Sleep(0) implements cooperative multitasking
 void OS_Sleep(unsigned long sleepTime){
 	RunPt->sleepCt = sleepTime;
+	OS_Suspend();
 }
 
 // ******** OS_Kill ************
 // kill the currently running thread, release its TCB and stack
 // input:  none
 // output: none
-void OS_Kill(void){int i;
+void OS_Kill(void){
 	// Your code here.
-	tcbType curr = *RunPt; //RunPt is the currently running thread
-  if (&curr == head) //if current is the head
-  {
-    head = tcbs[curr.id].next; //set the head to head->next
-  }
-  //set previous->next = current->next
-  tcbs[curr.id-1].next = tcbs[curr.id].next;
-
-  curr.available = 1; //this space is now available
-  tcbs[curr.id].next = NULL; //next is NULL
-  tcbs[curr.id].sp = NULL; //stack pointer is NULL
-
-  for(i = 1; i <= 16; i++)
-  {
-    Stacks[curr.id][STACKSIZE-i] = (int) NULL; //everything in the stack is NULL
-  }
+	unsigned	char	i;
+	int32_t	thread;
+	RunPt->available	=	1;
+	thread	=	OS_Id();
+	for	 (i =(thread + NUMTHREADS	- 1)%NUMTHREADS;i != thread; i = (i + NUMTHREADS-1)%NUMTHREADS)
+	{
+		if(tcbs[i].available	==	0)	break;	 	 	 //	find	the	previous	used	tcb
+	}
+	ThreadNum--;
+	tcbs[i].next	=	tcbs[thread].next;
+	OS_Suspend();	//	switch	the	thread
 }
 
 // ******** OS_Suspend ************
@@ -251,12 +246,8 @@ void OS_Kill(void){int i;
 // output: none
 void OS_Suspend(void) {
  	// Your code here.
-	tcbType curr = *RunPt;
-	//set stack ptr back to r4, call scheduler
-	//this sets the stack ptr back to R4 (starting reg)
-	tcbs[curr.id].sleepCt = 0;
-	NVIC_INT_CTRL_PENDSTSET;
-	//trigger systick?
+	NVIC_ST_CURRENT_R = 0; //reset counter
+	NVIC_INT_CTRL_R	=	0x04000000; //trigger systick
 }
 
 // ******** OS_InitSemaphore ************
@@ -265,6 +256,7 @@ void OS_Suspend(void) {
 // output: none
 void OS_InitSemaphore(Sema4Type *semaPt, long value){
 	// Your code here.
+	semaPt->Value = value;
 }
 
 // ******** OS_Wait ************
@@ -275,6 +267,14 @@ void OS_InitSemaphore(Sema4Type *semaPt, long value){
 // output: none
 void OS_Wait(Sema4Type *semaPt){
 	// Your code here.
+	OS_DisableInterrupts();
+	while(semaPt->Value == 0)
+	{
+		OS_EnableInterrupts();
+		OS_DisableInterrupts();
+	}
+	(semaPt->Value) = (semaPt->Value)-1;
+	OS_EnableInterrupts();
 }
 
 // ******** OS_Signal ************
@@ -285,6 +285,9 @@ void OS_Wait(Sema4Type *semaPt){
 // output: none
 void OS_Signal(Sema4Type *semaPt){
 	// Your code here.
+	OS_DisableInterrupts();
+	semaPt->Value = semaPt->Value + 1;
+	OS_EnableInterrupts();
 }
 
 // ******** OS_bWait ************
@@ -294,6 +297,9 @@ void OS_Signal(Sema4Type *semaPt){
 // output: none
 void OS_bWait(Sema4Type *semaPt){
 	// Your code here.
+	OS_DisableInterrupts();
+	semaPt->Value = 0; //Lab2 set to 0
+	OS_EnableInterrupts();
 }
 
 // ******** OS_bSignal ************
@@ -303,6 +309,9 @@ void OS_bWait(Sema4Type *semaPt){
 // output: none
 void OS_bSignal(Sema4Type *semaPt){
 	// Your code here.
+	OS_DisableInterrupts();
+	semaPt->Value = 1;
+	OS_EnableInterrupts();
 }
 
 void (*PeriodicTask)(void);
@@ -330,6 +339,7 @@ int OS_AddPeriodicThread(void(*task)(void),
   return 1;
 }
 
+void (*ButtonOneTask)(void);
 //******** OS_AddSW1Task ***************
 // add a background task to run whenever the SW1 (PF4) button is pushed
 // Inputs: pointer to a void/void background function
@@ -345,6 +355,9 @@ int OS_AddPeriodicThread(void(*task)(void),
 //           determines the relative priority of these four threads
 int OS_AddSW1Task(void(*task)(void), unsigned long priority) {
 	// Your code here.
+	//s1 maps to pd6 which is the button that we need to check
+	ButtonOneTask = task; //this is called in the push button interrupt handler
+	ButtonOneInit();
 	return 1;
 }
 
@@ -364,8 +377,12 @@ void OS_Launch(unsigned long theTimeSlice){
 // Inputs: none
 // Outputs: none (does not return)
 void Scheduler(void){
-	RunPt = RunPt->next;
 	// Your code here.
+	RunPt = RunPt->next; //skip one
+	while(RunPt->sleepCt)
+	{
+		RunPt=RunPt->next;
+	}
 }
 
 // ******** OS_Time ************
@@ -377,8 +394,7 @@ void Scheduler(void){
 //   this function and OS_TimeDifference have the same resolution and precision
 unsigned long OS_Time(void) {
 	// Your code here.
-
-	return 1;
+	return	TIMER3_TAILR_R	- TIMER3_TAV_R;
 }
 
 // ******** OS_TimeDifference ************
@@ -403,7 +419,7 @@ static uint32_t MSTime;
 // You are free to change how this works
 void OS_ClearMsTime(void) {
 	// Your code here.
-	InitTimer2A(0);
+	MSTime = 0;
 }
 
 // ******** OS_MsTime ************
@@ -414,7 +430,7 @@ void OS_ClearMsTime(void) {
 // It is ok to make the resolution to match the first call to OS_AddPeriodicThread
 unsigned long OS_MsTime(void) {
 	// Your code here.
-	return 0;
+	return MSTime;
 }
 
 void InitTimer1A(unsigned long period) {
@@ -480,6 +496,10 @@ void InitTimer2A(unsigned long period) {
 void Timer2A_Handler(void){
 	TIMER2_ICR_R = TIMER_ICR_TATOCINT;// acknowledge timer2A timeout
 	// Your code here.
+	if (RunPt->sleepCt != 0)
+	{
+		RunPt->sleepCt = RunPt->sleepCt - 1;
+	}
 }
 
 void InitTimer3A(unsigned long period) {
@@ -519,11 +539,15 @@ void Timer3A_Handler(void){
 #define BUTTON1   (*((volatile uint32_t *)0x40007100))  /* PD6 */
 volatile static uint32_t Last;
 
-void (*ButtonOneTask)(void);
+//void (*ButtonOneTask)(void);
 void ButtonOneInit(void){
   SYSCTL_RCGCGPIO_R |= 0x00000008; // 1) activate clock for Port D
   while((SYSCTL_PRGPIO_R&0x08) == 0){};// allow time for clock to stabilize
 	                                 // 2) no need to unlock PD6
+		//added lines to fix error
+	GPIO_PORTD_LOCK_R = 0x4C4F434B;  // unlock PD6
+  GPIO_PORTD_CR_R = 0x40;          // allow changes
+
   GPIO_PORTD_AMSEL_R &= ~0x40;     // 3) disable analog on PD6
                                    // 4) configure PD6 as GPIO
   GPIO_PORTD_PCTL_R = (GPIO_PORTD_PCTL_R&0xF0FFFFFF)+0x00000000;
