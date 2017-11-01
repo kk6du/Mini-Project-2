@@ -192,6 +192,6 @@ void OS_Launch(unsigned long theTimeSlice);
 void Scheduler(void);
 void InitTimer1A(unsigned long period);
 void InitTimer2A(unsigned long period);
-void InitTimer3A(unsigned long period);
+void InitTimer3A(void);
 
 #endif

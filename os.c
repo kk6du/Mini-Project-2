@@ -94,7 +94,7 @@ void OS_Init(void){int i;
   OS_DisableInterrupts();
   PLL_Init(Bus80MHz);                 // set processor clock to 80 MHz
 	InitTimer2A(TIME_1MS);  // initialize Timer2A which is used for software timer and decrease the sleepCt
-	InitTimer3A(80);
+	InitTimer3A();
   OS_ClearMsTime();
 
   NVIC_ST_CTRL_R = 0;         // disable SysTick during setup
@@ -467,6 +467,7 @@ void Timer1A_Handler(void){
 
 void InitTimer2A(unsigned long period) {
 	long sr;
+<<<<<<< HEAD
 	volatile unsigned long delay;
 
 	sr = StartCritical();
@@ -475,6 +476,14 @@ void InitTimer2A(unsigned long period) {
   delay = SYSCTL_RCGCTIMER_R;
 	delay = SYSCTL_RCGCTIMER_R;
 
+=======
+	
+	sr = StartCritical();
+  SYSCTL_RCGCTIMER_R |= 0x04;
+	
+    while((SYSCTL_RCGCTIMER_R & 0x04) == 0){} // allow time for clock to stabilize
+	
+>>>>>>> 5074ebdbb957ba3815329985066e8ba6e12a22e2
   TIMER2_CTL_R &= ~TIMER_CTL_TAEN; // 1) disable timer1A during setup
                                    // 2) configure for 32-bit timer mode
   TIMER2_CFG_R = TIMER_CFG_32_BIT_TIMER;
@@ -502,8 +511,9 @@ void Timer2A_Handler(void){
 	}
 }
 
-void InitTimer3A(unsigned long period) {
+void InitTimer3A(void) {
 	long sr;
+<<<<<<< HEAD
 	volatile unsigned long delay;
 
 	sr = StartCritical();
@@ -512,6 +522,14 @@ void InitTimer3A(unsigned long period) {
   delay = SYSCTL_RCGCTIMER_R;
 	delay = SYSCTL_RCGCTIMER_R;
 
+=======
+	
+	sr = StartCritical();
+  SYSCTL_RCGCTIMER_R |= 0x08;
+	
+  while((SYSCTL_RCGCTIMER_R & 0x08) == 0){} // allow time for clock to stabilize
+	
+>>>>>>> 5074ebdbb957ba3815329985066e8ba6e12a22e2
   TIMER3_CTL_R &= ~TIMER_CTL_TAEN; // 1) disable timer1A during setup
                                    // 2) configure for 32-bit timer mode
   TIMER3_CFG_R = TIMER_CFG_32_BIT_TIMER;

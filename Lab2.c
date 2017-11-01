@@ -28,7 +28,7 @@
 #define TOPNUMCOLOR LCD_ORANGE
 #define CROSSSIZE            5
 #define PERIOD               4000000   // DAS 20Hz sampling period in system time units
-#define WAITLENGTH           1000
+#define LIFETIME             1000
 #define RUNLENGTH            600 // 30 seconds run length
 
 
@@ -146,7 +146,7 @@ void Producer(void){
 //------------------Task 2--------------------------------
 // background thread executes with SW1 button
 // one foreground task created with button push
-// foreground treads run for 2 sec and die
+// foreground treads run for 1 sec and die
 // ***********ButtonWork*************
 void ButtonWork(void){
 	uint32_t StartTime,CurrentTime,ElapsedTime;
@@ -154,14 +154,15 @@ void ButtonWork(void){
 	ElapsedTime = 0;
 	OS_bWait(&LCDFree);
 	BSP_LCD_FillScreen(BGCOLOR);
-	while (ElapsedTime < WAITLENGTH){
+	while (ElapsedTime < LIFETIME){
 
 		CurrentTime = OS_MsTime();
 		ElapsedTime = CurrentTime - StartTime;
-		BSP_LCD_Message(0,5,0,"Wait Length:",WAITLENGTH);
+		BSP_LCD_Message(0,5,0,"Life Time:",LIFETIME);
 		BSP_LCD_Message(1,0,0,"Horizontal Area:",area[0]);
 		BSP_LCD_Message(1,1,0,"Vertical Area:",area[1]);
 		BSP_LCD_Message(1,2,0,"Elapsed Time:",ElapsedTime);
+		OS_Sleep(50);
 	}
 	BSP_LCD_FillScreen(BGCOLOR);
 	OS_bSignal(&LCDFree);
@@ -213,13 +214,13 @@ void Consumer(void){
 //------------------Task 4--------------------------------
 // foreground thread that runs without waiting or sleeping
 // it executes some calculation related to the position of crosshair 
-//******** FindCubeNum *************** 
-// foreground thread, Calculate the cube number
+//******** CubeNumCalc *************** 
+// foreground thread, calculates the virtual cube number for the crosshair
 // never blocks, never sleeps, never dies
 // inputs:  none
 // outputs: none
 
-void FindAreaNum(void){ 
+void CubeNumCalc(void){ 
 	uint16_t CurrentX,CurrentY;
   while(NumSamples < RUNLENGTH) {
 		CurrentX = x; CurrentY = y;
@@ -234,23 +235,13 @@ void FindAreaNum(void){
 //------------------Task 5--------------------------------
 // UART background ISR performs serial input/output
 // Two software fifos are used to pass I/O data to foreground
-// The interpreter runs as a foreground thread
-// The UART driver should call OS_Wait(&RxDataAvailable) when foreground tries to receive
-// The UART ISR should call OS_Signal(&RxDataAvailable) when it receives data from Rx
-// Similarly, the transmit channel waits on a semaphore in the foreground
-// and the UART ISR signals this semaphore (TxRoomLeft) when getting data from fifo
-// Modify your intepreter from Lab 1, adding commands to help debug 
 // Interpreter is a foreground thread, accepts input from serial port, outputs to serial port
 // inputs:  none
 // outputs: none
-void Interpreter(void);    // just a prototype, link to your interpreter
-// add the following commands, leave other commands, if they make sense
-// 1) print performance measures 
+// there are following commands
+//    print performance measures 
 //    time-jitter, number of data points lost, number of calculations performed
-//    i.e., NumSamples, NumCreated, MaxJitter, DataLost, FilterWork, PIDwork
-      
-// 2) print debugging parameters 
-//    i.e., x[], y[] 
+//    i.e., NumSamples, NumCreated, MaxJitter, DataLost, UpdateWork, Calculations
 void Interpreter(void){
 	char command[80];
   while(1){
@@ -318,7 +309,7 @@ int main(void){
 // create initial foreground threads
   NumCreated += OS_AddThread(&Interpreter,128,2); 
   NumCreated += OS_AddThread(&Consumer,128,1); 
-	NumCreated += OS_AddThread(&FindAreaNum,128,1); 
+	NumCreated += OS_AddThread(&CubeNumCalc,128,1); 
  
   OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
 	return 0;            // this never executes
